@@ -1,0 +1,79 @@
+@import "tailwindcss";
+
+@layer base {
+  body {
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    background-color: #050814;
+    color: #e2e8f0;
+    overflow-x: hidden;
+  }
+}
+
+/* Custom Cyber & OLED Animations */
+@keyframes pulseGlow {
+  0%, 100% { opacity: 0.8; filter: drop-shadow(0 0 15px rgba(56, 189, 248, 0.6)); }
+  50% { opacity: 1; filter: drop-shadow(0 0 28px rgba(56, 189, 248, 0.95)); }
+}
+
+@keyframes robotBounce {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-12px) rotate(1.5deg); }
+}
+
+@keyframes balloonRise {
+  0% { transform: translateY(100%) scale(0.6); opacity: 0; }
+  20% { opacity: 0.9; }
+  100% { transform: translateY(-120%) scale(1.1); opacity: 0; }
+}
+
+@keyframes goldSparkle {
+  0% { transform: scale(0) rotate(0deg); opacity: 0; }
+  50% { transform: scale(1.2) rotate(180deg); opacity: 1; }
+  100% { transform: scale(0) rotate(360deg); opacity: 0; }
+}
+
+@keyframes scanline {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(1000%); }
+}
+
+.animate-robot-bounce {
+  animation: robotBounce 3.5s ease-in-out infinite;
+}
+
+.animate-glow {
+  animation: pulseGlow 2.5s ease-in-out infinite;
+}
+
+.oled-screen {
+  font-family: 'JetBrains Mono', monospace;
+  background-color: #030a10;
+  box-shadow: inset 0 0 20px rgba(0, 242, 254, 0.25), 0 0 15px rgba(0, 242, 254, 0.15);
+  border: 2px solid #0e3b5e;
+}
+
+.oled-screen::after {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%);
+  background-size: 100% 4px;
+  pointer-events: none;
+  opacity: 0.6;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #090e1f;
+}
+::-webkit-scrollbar-thumb {
+  background: #1e293b;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #334155;
+}

@@ -1,0 +1,6 @@
+{
+  "name": "Medha 2K26 - AI Robot & Faculty Recognition System",
+  "description": "Smart AI & Robotics Event Platform for Medha 2K26 featuring face recognition, ESP32 OLED & LED hardware bridge, voice synthesizer, thermal print simulator, VIP SMS invitations, student HD media hub, and interactive talking robot.",
+  "requestFramePermissions": ["camera", "microphone"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
