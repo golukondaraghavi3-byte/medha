@@ -39,8 +39,7 @@ import os
 
 # ================= CONFIGURATION =================
 SERIAL_PORT = "COM3"  # Change to "/dev/ttyUSB0" on Linux/macOS
-BAUD_RATE = 115200
-SMS_WEBHOOK_URL = "https://medha2k26.edu/api/sms/send"  # Or your Twilio / Fast2SMS API key
+SMS_WEBHOOK_URL = "http://localhost:3000/api/sms/send"  # Or your Fast2SMS / Twilio API key
 
 # Initialize Bluetooth / System Voice Synthesizer
 engine = pyttsx3.init()
@@ -193,13 +192,14 @@ if __name__ == "__main__":
 `;
 
   const esp32InoCode = `/*
- * MEDHA 2K26 - ESP32 OLED & DUAL LED HARDWARE CONTROLLER
+ * MEDHA 2K26 - ESP32 OLED (SSD1306) & DUAL LED CONTROLLER
  * Target: ESP32-S NodeMCU Module
  * Components:
- *   - 0.96 inch I2C OLED (SSD1306 128x64)
- *   - Green LED (GPIO 2) with 330 Ohm resistor
- *   - Red LED (GPIO 4) with 330 Ohm resistor
- *   - USB Serial Cable connected to Laptop (Python Face Recognizer)
+ *   - 0.96 inch I2C OLED (SSD1306 128x64, Address 0x3C)
+ *   - Green LED (GPIO 2 via 330 Ohm) - Face Match Verified
+ *   - Red LED (GPIO 4 via 330 Ohm) - Standby / Scanning
+ *   - Embedded Database: ALL 36 FACULTY & ORGANIZERS
+ *   - Internal Real-Time Clock (RTC) with Serial Sync
  */
 
 #include <Wire.h>
@@ -209,111 +209,166 @@ if __name__ == "__main__":
 #define SCREEN_WIDTH 128
 #define SCREEN_HEIGHT 64
 #define OLED_RESET -1
-#define SCREEN_ADDRESS 0x3C  // Common I2C address for 0.96" SSD1306
+#define SCREEN_ADDRESS 0x3C
 
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
-// Pin Definitions
-const int GREEN_LED_PIN = 2;   // Recognition Confirmed
-const int RED_LED_PIN = 4;     // Scanning / Idle
-const int I2C_SDA_PIN = 21;    // ESP32 default SDA
-const int I2C_SCL_PIN = 22;    // ESP32 default SCL
+const int GREEN_LED_PIN = 2;
+const int RED_LED_PIN   = 4;
+const int I2C_SDA_PIN   = 21;
+const int I2C_SCL_PIN   = 22;
+
+// Embedded 36 Faculty Database in ESP32 Flash Memory
+struct FacultyRecord {
+  uint8_t id;
+  const char* name;
+  const char* designation;
+  const char* department;
+  const char* phone;
+  const char* token;
+};
+
+const FacultyRecord FACULTY_DB[36] = {
+  { 1, "Peta Pradeep Kumar", "Principal", "Leadership", "8897526662", "VIP-001" },
+  { 2, "Marada Satya Prakash", "Principal", "Academic", "8501986663", "VIP-002" },
+  { 3, "BVPV Narasimha Murthy", "Vice Principal", "Student Affairs", "7702661356", "VIP-003" },
+  { 4, "R.V. Ramanayya Patrudu", "Vice Principal", "Development", "9037789951", "VIP-004" },
+  { 5, "M. Narsing Rao", "HOD Statistics", "Statistics", "8897332542", "VIP-005" },
+  { 6, "M. Nookaratnam", "Lecturer Maths", "Mathematics", "9553018581", "VIP-006" },
+  { 7, "Palipini Srinu", "H.O.D CRT", "Training", "8096221949", "VIP-007" },
+  { 8, "P. Devi Shankar", "Lecturer CRT", "Training", "6300270051", "VIP-008" },
+  { 9, "Miryala Shiva Prasad", "Lecturer CRT", "Training", "8142357458", "VIP-009" },
+  { 10, "Kanuru Durga", "Lecturer CRT", "Training", "9398419695", "VIP-010" },
+  { 11, "Karri Goutham Babu", "Lecturer English", "Soft Skills", "8074558427", "VIP-011" },
+  { 12, "G. Sesi Bhushan Rao", "Lecturer English", "Soft Skills", "9573823447", "VIP-012" },
+  { 13, "M. Ganesh Kumar", "Lecturer English", "Soft Skills", "7013223022", "VIP-013" },
+  { 14, "Annepu Sridhar", "Lecturer English", "Soft Skills", "7981060508", "VIP-014" },
+  { 15, "G. Satish Kanth", "H.O.D Management", "Management", "8333824825", "VIP-015" },
+  { 16, "Patnayakuni Swetha", "Lecturer Commerce", "Management", "9393214984", "VIP-016" },
+  { 17, "K. Sruthi", "H.O.D Comp Sci", "Computer Science", "8639380293", "VIP-017" },
+  { 18, "K. Bhavani", "Lecturer Comp Sci", "Computer Science", "9160392953", "VIP-018" },
+  { 19, "D. Leelavathi", "Lecturer Comp Sci", "Computer Science", "6301052715", "VIP-019" },
+  { 20, "Pallapu Vineela", "Lecturer Comp Sci", "Computer Science", "7032574838", "VIP-020" },
+  { 21, "B. Pavani", "Lecturer Comp Sci", "Data Science", "8008197699", "VIP-021" },
+  { 22, "B. Rajeswari", "Lecturer Comp Sci", "Computer Science", "9390893840", "VIP-022" },
+  { 23, "M. Suneetha", "Lecturer Comp Sci", "Computer Science", "9010861937", "VIP-023" },
+  { 24, "B. Pranathi", "Lecturer Comp Sci", "Computer Science", "9346568696", "VIP-024" },
+  { 25, "S. Joshika", "Lecturer Comp Sci", "Computer Science", "8639949608", "VIP-025" },
+  { 26, "P. Gayathri", "Lecturer Comp Sci", "Computer Science", "7995453899", "VIP-026" },
+  { 27, "Saviti Tarun", "Lecturer AI & ML", "Artificial Intel", "9704995477", "VIP-027" },
+  { 28, "M. Satya Suneetha", "H.O.D Chemistry", "Chemistry", "7382048778", "VIP-028" },
+  { 29, "G. Naresh", "H.O.D Electronics", "IoT & Electronics", "8498886056", "VIP-029" },
+  { 30, "B. Tirupati Rao", "H.O.D Telugu", "Telugu Dept", "9848198792", "VIP-030" },
+  { 31, "K. Shiva Krishna", "Lecturer Telugu", "Telugu Dept", "9573248106", "VIP-031" },
+  { 32, "S. Sujatha", "H.O.D Hindi", "Hindi Dept", "9948306191", "VIP-032" },
+  { 33, "G. Durga Devi", "Librarian", "Library Science", "9030730355", "VIP-033" },
+  { 34, "T. Sai Ratnam", "HOD of AI", "Artificial Intel", "9347905677", "VIP-034" },
+  { 35, "G. Srivani", "HOD Comp Sci", "Computer Science", "9849004262", "VIP-035" },
+  { 36, "A. Renuka", "Student AI Lead", "Comp Sci & AI", "6281793680", "VIP-036" }
+};
+
+int curH = 10, curM = 30, curS = 0;
+unsigned long lastSecTick = 0;
 
 void setup() {
   Serial.begin(115200);
   pinMode(GREEN_LED_PIN, OUTPUT);
   pinMode(RED_LED_PIN, OUTPUT);
-
   digitalWrite(GREEN_LED_PIN, LOW);
-  digitalWrite(RED_LED_PIN, HIGH); // Standby red indicator
+  digitalWrite(RED_LED_PIN, HIGH);
 
   Wire.begin(I2C_SDA_PIN, I2C_SCL_PIN);
-
   if(!display.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS)) {
-    Serial.println(F("[ERROR] SSD1306 allocation failed"));
+    Serial.println(F("[ERROR] OLED init failed"));
     for(;;);
   }
-
-  showBootScreen();
-}
-
-void showBootScreen() {
-  display.clearDisplay();
-  display.setTextSize(1);
-  display.setTextColor(SSD1306_WHITE);
-  display.setCursor(10, 8);
-  display.println(F("====================="));
-  display.setCursor(20, 20);
-  display.setTextSize(2);
-  display.println(F("MEDHA"));
-  display.setCursor(45, 38);
-  display.println(F("2K26"));
-  display.setTextSize(1);
-  display.setCursor(18, 54);
-  display.println(F("AI ROBOT READY"));
-  display.display();
+  showStandbyScreen();
 }
 
 void loop() {
-  // Check for incoming serial commands from Python Face Recognizer
+  if (millis() - lastSecTick >= 1000) {
+    lastSecTick = millis();
+    curS++;
+    if (curS >= 60) { curS = 0; curM++; if (curM >= 60) { curM = 0; curH = (curH + 1) % 24; } }
+  }
+
   if (Serial.available() > 0) {
-    String packet = Serial.readStringUntil('\\n');
-    packet.trim();
+    String cmd = Serial.readStringUntil('\\n');
+    cmd.trim();
 
-    if (packet.startsWith("MATCH:")) {
-      // Packet format: MATCH:Name|Role|OCT 24
-      String payload = packet.substring(6);
-      int firstPipe = payload.indexOf('|');
-      int secondPipe = payload.indexOf('|', firstPipe + 1);
-
-      String facultyName = (firstPipe > 0) ? payload.substring(0, firstPipe) : payload;
-      String facultyRole = (firstPipe > 0 && secondPipe > 0) ? payload.substring(firstPipe + 1, secondPipe) : "";
-
-      // 1. Light up Green LED and turn off Red LED
-      digitalWrite(GREEN_LED_PIN, HIGH);
-      digitalWrite(RED_LED_PIN, LOW);
-
-      // 2. Render Faculty name on 0.96" OLED
-      display.clearDisplay();
-      display.setTextSize(1);
-      display.setTextColor(SSD1306_WHITE);
-      display.setCursor(0, 2);
-      display.println(F("[ MEDHA 2K26 AI ]"));
-      display.drawLine(0, 12, 128, 12, SSD1306_WHITE);
-
-      display.setCursor(0, 16);
-      display.println(F("WELCOME VIP FACULTY:"));
-
-      display.setCursor(0, 28);
-      display.setTextSize(1);
-      display.println(facultyName);
-
-      display.setCursor(0, 42);
-      display.println(facultyRole);
-
-      display.drawLine(0, 52, 128, 52, SSD1306_WHITE);
-      display.setCursor(16, 55);
-      display.println(F("OCT 24, 2026 - VIP"));
-      display.display();
-
-      delay(7000); // Keep on screen for 7 seconds
-      digitalWrite(GREEN_LED_PIN, LOW);
-      digitalWrite(RED_LED_PIN, HIGH);
-      showBootScreen();
-    }
-    else if (packet.startsWith("SCAN:")) {
-      digitalWrite(GREEN_LED_PIN, LOW);
-      digitalWrite(RED_LED_PIN, HIGH);
-
-      display.clearDisplay();
-      display.setCursor(10, 20);
-      display.setTextSize(1);
-      display.println(F("MEDHA 2K26 WEBCAM"));
-      display.setCursor(10, 36);
-      display.println(F("PLEASE LOOK AT CAMERA"));
-      display.display();
+    if (cmd.startsWith("FACULTY:")) {
+      int id = cmd.substring(8).toInt();
+      if (id >= 1 && id <= 36) displayFacultyOnOled(id - 1);
+    } else if (cmd.startsWith("TIME:")) {
+      curH = cmd.substring(5, 7).toInt();
+      curM = cmd.substring(8, 10).toInt();
+      curS = cmd.substring(11, 13).toInt();
+      showStandbyScreen();
     }
   }
+}
+
+void displayFacultyOnOled(int idx) {
+  const FacultyRecord& f = FACULTY_DB[idx];
+  digitalWrite(GREEN_LED_PIN, HIGH);
+  digitalWrite(RED_LED_PIN, LOW);
+
+  display.clearDisplay();
+  display.setTextSize(1);
+  display.setTextColor(SSD1306_WHITE);
+
+  // Top Bar with Clock
+  display.setCursor(0, 0);
+  display.print(F("MEDHA 2K26"));
+  display.setCursor(76, 0);
+  display.printf("%02d:%02d:%02d", curH, curM, curS);
+  display.drawLine(0, 11, 127, 11, SSD1306_WHITE);
+
+  // VIP Faculty Details
+  display.setCursor(0, 15);
+  display.printf("WELCOME VIP #%d/36", f.id);
+  display.setCursor(0, 27);
+  display.println(f.name);
+  display.setCursor(0, 39);
+  display.println(f.designation);
+  display.setCursor(0, 49);
+  display.println(f.department);
+
+  display.drawLine(0, 56, 127, 56, SSD1306_WHITE);
+  display.setCursor(0, 57);
+  display.print(f.token);
+  display.setCursor(72, 57);
+  display.print(F("OCT 24 VIP"));
+  display.display();
+
+  delay(7000);
+  digitalWrite(GREEN_LED_PIN, LOW);
+  digitalWrite(RED_LED_PIN, HIGH);
+  showStandbyScreen();
+}
+
+void showStandbyScreen() {
+  display.clearDisplay();
+  display.setTextSize(1);
+  display.setTextColor(SSD1306_WHITE);
+  display.setCursor(0, 0);
+  display.print(F("MEDHA 2K26 AI"));
+  display.setCursor(76, 0);
+  display.printf("%02d:%02d:%02d", curH, curM, curS);
+  display.drawLine(0, 11, 127, 11, SSD1306_WHITE);
+
+  display.drawRect(4, 16, 120, 34, SSD1306_WHITE);
+  display.setCursor(14, 22);
+  display.print(F("36 FACULTY LOADED"));
+  display.setCursor(14, 32);
+  display.print(F("EVENT: OCT 24, 2026"));
+  display.setCursor(14, 41);
+  display.print(F("STATUS: READY"));
+
+  display.drawLine(0, 54, 127, 54, SSD1306_WHITE);
+  display.setCursor(6, 56);
+  display.print(F("AWAITING WEBCAM SCAN"));
+  display.display();
 }
 `;
 

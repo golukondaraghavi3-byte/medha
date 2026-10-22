@@ -157,9 +157,10 @@ export const LiveStation: React.FC<LiveStationProps> = ({
     await speakRobotVoice(registrationSpeech, { pitch: 1.1, rate: 0.98 });
 
     // STEP 6: Trigger SMS Dispatch
+    const liveAppUrl = typeof window !== 'undefined' ? window.location.origin : '';
     onLogEvent(
       'SMS_DISPATCH',
-      `SMS Dispatched to +91 ${faculty.phone} containing VIP Invitation Link: medha2k26.edu/vip-pass?id=${faculty.id}`,
+      `SMS Dispatched to +91 ${faculty.phone} containing VIP Invitation Link: ${liveAppUrl}?vip=pass&id=${faculty.id}`,
       'success'
     );
 

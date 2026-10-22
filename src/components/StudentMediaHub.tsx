@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import { Camera, Upload, QrCode, Heart, Sparkles, Filter, Video, Download, X, Play, StopCircle, RefreshCw, Layers } from 'lucide-react';
 import { StudentMediaItem } from '../types';
 import { INITIAL_STUDENT_MEDIA } from '../data/studentMediaDatabase';
+import { PUBLIC_APP_URL } from '../config/appConfig';
 
 export const StudentMediaHub: React.FC = () => {
   const [mediaItems, setMediaItems] = useState<StudentMediaItem[]>(() => {
@@ -503,8 +504,8 @@ export const StudentMediaHub: React.FC = () => {
               </div>
             </div>
 
-            <div className="text-[11px] font-mono text-cyan-300">
-              medha2k26.edu/hub-upload
+            <div className="text-[11px] font-mono text-cyan-300 break-all px-2 select-all bg-black/60 p-2 rounded-lg border border-cyan-900/60">
+              {PUBLIC_APP_URL}/#gallery
             </div>
 
             <button

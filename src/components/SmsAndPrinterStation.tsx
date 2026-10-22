@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Smartphone, Printer, Send, ExternalLink, Check, Copy, MessageSquare, Sparkles, Download } from 'lucide-react';
+import { Smartphone, Printer, Send, ExternalLink, Check, Copy, MessageSquare, Sparkles, Download, Share2, Globe, AlertTriangle } from 'lucide-react';
 import { FacultyMember } from '../types';
+import { getShareableVipUrl, PUBLIC_APP_URL } from '../config/appConfig';
 
 interface SmsAndPrinterStationProps {
   faculty: FacultyMember | null;
@@ -31,15 +32,16 @@ export const SmsAndPrinterStation: React.FC<SmsAndPrinterStationProps> = ({
     vipToken: 'MEDHA-VIP-001',
   };
 
+  // Always use the public shared URL so external people (Renuka, faculty, students) don't get 403
+  const vipUrl = getShareableVipUrl(targetFaculty.id, targetFaculty.vipToken);
+
   const smsText = `MEDHA 2K26 VIP REGISTRATION CONFIRMED!
 Dear ${targetFaculty.salutation} ${targetFaculty.name} sir/madam,
 You have been successfully registered for Medha 2K26 on October 24th, 2026.
 Event details and information have been recorded.
 👉 Click here to unlock your VIP Greeting Pass & QR Code:
-https://medha2k26.edu/vip-pass?id=${targetFaculty.id}&token=${targetFaculty.vipToken}
+${vipUrl}
 Stay tuned for updates!`;
-
-  const vipUrl = `https://medha2k26.edu/vip-pass?id=${targetFaculty.id}&token=${targetFaculty.vipToken}`;
 
   const handleCopy = () => {
     navigator.clipboard.writeText(smsText);
@@ -94,11 +96,53 @@ Stay tuned for updates!`;
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-      {/* Left: Smartphone SMS Dispatch Simulator */}
-      <div className="lg:col-span-7 bg-[#091024] border border-cyan-900/50 rounded-2xl p-5 shadow-xl flex flex-col justify-between">
-        <div>
-          <div className="flex items-center justify-between pb-3 border-b border-cyan-950 mb-4">
+    <div className="space-y-4">
+      {/* Public Shareable URL Notice (Fixes 403 Google Error for Renuka & Faculty) */}
+      <div className="p-4 rounded-2xl bg-gradient-to-r from-cyan-950/80 via-[#0a1835] to-blue-950/80 border border-cyan-500/50 shadow-lg flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex items-start gap-3">
+          <div className="p-2 bg-cyan-600/20 border border-cyan-400/40 rounded-xl text-cyan-300 shrink-0 mt-0.5">
+            <Globe className="w-5 h-5" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <h4 className="text-sm font-bold text-white">Public Share Link (For Renuka, Faculty &amp; Students)</h4>
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-800">
+                NO 403 ERROR
+              </span>
+            </div>
+            <p className="text-xs text-slate-300 mt-0.5">
+              To share with Renuka or other faculty, send this link instead of copying the private <code className="text-rose-400">studio.google.com</code> URL:
+            </p>
+            <div className="text-xs font-mono text-cyan-300 mt-1 break-all select-all bg-black/50 px-2.5 py-1.5 rounded-lg border border-cyan-900/60">
+              {vipUrl}
+            </div>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 shrink-0">
+          <button
+            onClick={handleCopy}
+            className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 transition-colors border border-slate-700"
+          >
+            {copiedLink ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
+            <span>{copiedLink ? 'Copied' : 'Copy Link'}</span>
+          </button>
+
+          <button
+            onClick={handleTriggerWhatsApp}
+            className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 transition-colors shadow-md shadow-emerald-600/30"
+          >
+            <MessageSquare className="w-4 h-4" />
+            <span>Share to WhatsApp</span>
+          </button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* Left: Smartphone SMS Dispatch Simulator */}
+        <div className="lg:col-span-7 bg-[#091024] border border-cyan-900/50 rounded-2xl p-5 shadow-xl flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between pb-3 border-b border-cyan-950 mb-4">
             <div className="flex items-center gap-2">
               <div className="p-2 bg-blue-950 border border-blue-700/50 rounded-lg text-blue-400">
                 <Smartphone className="w-5 h-5" />
@@ -131,18 +175,43 @@ Stay tuned for updates!`;
               </p>
 
               {/* High-Intent "Click Here" Link Button */}
-              <div className="pt-2">
+              <div className="pt-2 space-y-1.5">
                 <button
-                  onClick={() => onOpenVipPass(targetFaculty)}
+                  onClick={() => {
+                    if (typeof window !== 'undefined') {
+                      window.history.pushState({}, '', vipUrl);
+                    }
+                    onOpenVipPass(targetFaculty);
+                  }}
                   className="w-full sm:w-auto inline-flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 text-slate-950 font-bold text-xs rounded-xl shadow-lg shadow-amber-500/20 hover:scale-[1.02] transition-transform"
                 >
                   <Sparkles className="w-4 h-4 text-slate-900" />
                   <span>👉 CLICK HERE: UNLOCK VIP GREETING &amp; PASS</span>
                   <ExternalLink className="w-3.5 h-3.5" />
                 </button>
+
+                <div className="text-[11px] font-mono text-cyan-300 break-all bg-black/60 p-2 rounded-lg border border-cyan-950 flex items-center justify-between gap-2">
+                  <a
+                    href={vipUrl}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      window.history.pushState({}, '', vipUrl);
+                      onOpenVipPass(targetFaculty);
+                    }}
+                    className="hover:underline text-cyan-400 truncate"
+                  >
+                    {vipUrl}
+                  </a>
+                  <button
+                    onClick={handleCopy}
+                    className="text-[10px] px-2 py-0.5 rounded bg-slate-800 text-slate-300 hover:text-white shrink-0"
+                  >
+                    {copiedLink ? 'Copied' : 'Copy'}
+                  </button>
+                </div>
               </div>
 
-              <div className="text-[10px] text-slate-400 pt-2 font-mono">
+              <div className="text-[10px] text-slate-400 pt-1 font-mono">
                 Token: <span className="text-cyan-400">{targetFaculty.vipToken}</span> · You will have a text message sent to your mobile phone number.
               </div>
             </div>
@@ -279,5 +348,6 @@ Stay tuned for updates!`;
         )}
       </div>
     </div>
+  </div>
   );
 };

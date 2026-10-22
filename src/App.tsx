@@ -61,6 +61,34 @@ export default function App() {
     },
   ]);
 
+  // Detect VIP Pass link in URL parameters (e.g. ?vip=pass&id=1)
+  React.useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    const hasVip = params.get('vip');
+    const idParam = params.get('id');
+    const tokenParam = params.get('token');
+
+    if (hasVip || idParam || tokenParam) {
+      const match = INITIAL_FACULTY_DATABASE.find(
+        (f) =>
+          (idParam && f.id === Number(idParam)) ||
+          (tokenParam && f.vipToken.toLowerCase() === tokenParam.toLowerCase())
+      );
+      if (match) {
+        setSelectedFaculty(match);
+        setIsVipCardOpen(true);
+        addLog(
+          'SMS_DISPATCH',
+          `Direct URL Navigation: Opened VIP Greeting Pass for ${match.salutation} ${match.name}`,
+          'success'
+        );
+      } else {
+        setIsVipCardOpen(true);
+      }
+    }
+  }, []);
+
   const addLog = (
     category: EventLog['category'],
     message: string,
@@ -113,6 +141,7 @@ export default function App() {
         isAdminAuthed={isAdminAuthed}
         onOpenAdminAuth={() => setIsAdminModalOpen(true)}
         onOpenCodeExport={() => setIsCodeExportOpen(true)}
+        onOpenVipPass={() => handleOpenVipPass(selectedFaculty)}
         totalFacultyCount={facultyList.length}
       />
 
@@ -135,6 +164,8 @@ export default function App() {
             {/* Hardware OLED Display & ESP32 Bridge */}
             <OledSimulator
               hardwareState={hardwareState}
+              currentFaculty={selectedFaculty}
+              onSelectFacultyForOled={(f) => setSelectedFaculty(f)}
               onToggleHardware={() => {
                 setHardwareState((prev) => ({
                   ...prev,
@@ -220,6 +251,8 @@ export default function App() {
           <div className="space-y-6">
             <OledSimulator
               hardwareState={hardwareState}
+              currentFaculty={selectedFaculty}
+              onSelectFacultyForOled={(f) => setSelectedFaculty(f)}
               onToggleHardware={() => {
                 setHardwareState((prev) => ({
                   ...prev,

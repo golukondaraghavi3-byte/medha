@@ -7,6 +7,7 @@ interface NavbarProps {
   isAdminAuthed: boolean;
   onOpenAdminAuth: () => void;
   onOpenCodeExport: () => void;
+  onOpenVipPass: () => void;
   totalFacultyCount: number;
 }
 
@@ -15,7 +16,8 @@ export const Navbar: React.FC<NavbarProps> = ({
   setActiveTab,
   isAdminAuthed,
   onOpenAdminAuth,
-  onOpenCodeExport
+  onOpenCodeExport,
+  onOpenVipPass
 }) => {
   return (
     <header className="sticky top-0 z-40 bg-[#070c1e]/90 backdrop-blur-md border-b border-cyan-950/60 px-4 lg:px-8 py-3">
@@ -108,13 +110,22 @@ export const Navbar: React.FC<NavbarProps> = ({
         </nav>
 
         {/* Zone 3: Primary Action & Auth Lock */}
-        <div className="flex items-center gap-3 shrink-0">
+        <div className="flex items-center gap-2.5 shrink-0">
+          <button
+            onClick={onOpenVipPass}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-amber-300 bg-amber-950/70 border border-amber-500/60 hover:bg-amber-900 rounded-lg transition-all whitespace-nowrap shadow-sm shadow-amber-500/20"
+            title="Open VIP Greeting Card & QR Pass"
+          >
+            <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+            <span>VIP Pass &amp; QR</span>
+          </button>
+
           <button
             onClick={onOpenCodeExport}
-            className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 text-xs font-mono font-medium text-slate-300 bg-slate-900 border border-slate-700 rounded-lg hover:border-cyan-500 hover:text-white transition-all whitespace-nowrap"
+            className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 text-xs font-mono font-medium text-slate-300 bg-slate-900 border border-slate-700 rounded-lg hover:border-cyan-500 hover:text-white transition-all whitespace-nowrap"
             title="Download ESP32 and Python code for VS Code"
           >
-            <span>VS Code Scripts</span>
+            <span>VS Code</span>
           </button>
 
           <button
